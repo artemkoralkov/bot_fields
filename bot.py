@@ -3,7 +3,6 @@ from aiogram import Bot, Dispatcher, types
 from aiogram.contrib.middlewares.logging import LoggingMiddleware
 from aiogram.types import ParseMode
 from aiogram.utils import executor
-from random import randint
 import re
 from db import (
     init_db,
