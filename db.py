@@ -30,7 +30,7 @@ def add_to_db(field_name, field_number, message):
                 field_name,
                 field_number,
                 message,
-                datetime.now() + timedelta(days=randint(1, 50)),
+                datetime.now()),
             ),
         )
         connection.commit()
