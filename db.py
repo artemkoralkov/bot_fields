@@ -1,5 +1,4 @@
-from datetime import datetime, timedelta
-from random import randint
+from datetime import datetime
 import sqlite3
 
 
