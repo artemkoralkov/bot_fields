@@ -41,7 +41,6 @@ async def handle_text_message(message: types.Message):
         part_to_remove = match.group(0)
         message_without_part = message_text.replace(part_to_remove, "").strip()
         field_number, field_name = part_to_remove.split()
-        field_number = field_number + str(randint(1, 9))
         add_to_db(field_name, field_number, message_without_part)
         await message.reply("Сообщение добавлено.")
     else:
