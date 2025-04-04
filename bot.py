@@ -1,8 +1,6 @@
-import logging
+import asyncio
 from aiogram import Bot, Dispatcher, types
 
-
-from aiogram.utils import executor
 
 import re
 from db import (
@@ -17,8 +15,7 @@ from db import (
 init_db()
 
 # Вставьте сюда ваш токен API
-API_TOKEN = 'YOUR_API_TOKEN'
-
+API_TOKEN = "YOUR_API_TOKEN"
 
 
 bot = Bot(token=API_TOKEN)
@@ -27,10 +24,14 @@ dp = Dispatcher(bot)
 
 message_pattern = r"№\d+\w*\d*\s+[А-Я][а-я]+"
 
+
 # Обработчик команды /start
-@dp.message_handler(commands=['start'])
+@dp.message_handler(commands=["start"])
 async def send_welcome(message: types.Message):
-    await message.reply("Привет! Я ваш бот. Используйте команду /view для просмотра сообщений или просто отправьте сообщение для добавления в базу.")
+    await message.reply(
+        "Привет! Я ваш бот. Используйте команду /view для просмотра сообщений или просто отправьте сообщение для добавления в базу."
+    )
+
 
 # Обработчик текстовых сообщений
 @dp.message_handler(content_types=types.ContentType.TEXT)
@@ -46,8 +47,9 @@ async def handle_text_message(message: types.Message):
     else:
         await message.reply("Сообщение не соответствует требуемому формату.")
 
+
 # Обработчик команды /view
-@dp.message_handler(commands=['view'])
+@dp.message_handler(commands=["view"])
 async def view_messages(message: types.Message):
     field_names = list(get_filed_names())
     if not field_names:
@@ -56,7 +58,9 @@ async def view_messages(message: types.Message):
 
     # Постраничная навигация
     page_size = 10  # Количество элементов на странице
-    pages = [field_names[i:i + page_size] for i in range(0, len(field_names), page_size)]
+    pages = [
+        field_names[i : i + page_size] for i in range(0, len(field_names), page_size)
+    ]
     current_page = 0
 
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
@@ -71,8 +75,13 @@ async def view_messages(message: types.Message):
             keyboard.add("Следующая ➡️")
 
     await message.reply("Выберите поле:", reply_markup=keyboard)
-    await dp.current_state(user=message.from_user.id).set_state("waiting_for_field_name")
-    await dp.current_state(user=message.from_user.id).update_data(pages=pages, current_page=current_page)
+    await dp.current_state(user=message.from_user.id).set_state(
+        "waiting_for_field_name"
+    )
+    await dp.current_state(user=message.from_user.id).update_data(
+        pages=pages, current_page=current_page
+    )
+
 
 @dp.message_handler(state="waiting_for_field_name")
 async def process_field_name_step(message: types.Message, state):
@@ -93,10 +102,15 @@ async def process_field_name_step(message: types.Message, state):
 
         # Постраничная навигация для номеров
         page_size = 10
-        number_pages = [field_numbers[i:i + page_size] for i in range(0, len(field_numbers), page_size)]
+        number_pages = [
+            field_numbers[i : i + page_size]
+            for i in range(0, len(field_numbers), page_size)
+        ]
         current_number_page = 0
 
-        keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+        keyboard = types.ReplyKeyboardMarkup(
+            resize_keyboard=True, one_time_keyboard=True
+        )
         for number in number_pages[current_number_page]:
             keyboard.add(number)
 
@@ -107,8 +121,14 @@ async def process_field_name_step(message: types.Message, state):
                 keyboard.add("Следующая ➡️")
 
         await message.reply("Выберите номер:", reply_markup=keyboard)
-        await dp.current_state(user=message.from_user.id).set_state("waiting_for_field_number")
-        await state.update_data(selected_field_name=selected_field_name, number_pages=number_pages, current_number_page=current_number_page)
+        await dp.current_state(user=message.from_user.id).set_state(
+            "waiting_for_field_number"
+        )
+        await state.update_data(
+            selected_field_name=selected_field_name,
+            number_pages=number_pages,
+            current_number_page=current_number_page,
+        )
         return
 
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
@@ -124,6 +144,7 @@ async def process_field_name_step(message: types.Message, state):
     await message.reply("Выберите поле:", reply_markup=keyboard)
     await state.update_data(current_page=current_page)
 
+
 @dp.message_handler(state="waiting_for_field_number")
 async def process_field_number_step(message: types.Message, state):
     data = await state.get_data()
@@ -136,8 +157,12 @@ async def process_field_number_step(message: types.Message, state):
         current_number_page += 1
     else:
         selected_field_number = message.text
-        await message.reply("Введите начальную дату (dd.mm.yyyy) или нажмите Enter, чтобы пропустить:")
-        await dp.current_state(user=message.from_user.id).set_state("waiting_for_start_date")
+        await message.reply(
+            "Введите начальную дату (dd.mm.yyyy) или нажмите Enter, чтобы пропустить:"
+        )
+        await dp.current_state(user=message.from_user.id).set_state(
+            "waiting_for_start_date"
+        )
         await state.update_data(selected_field_number=selected_field_number)
         return
 
@@ -154,12 +179,16 @@ async def process_field_number_step(message: types.Message, state):
     await message.reply("Выберите номер:", reply_markup=keyboard)
     await state.update_data(current_number_page=current_number_page)
 
+
 @dp.message_handler(state="waiting_for_start_date")
 async def process_start_date_step(message: types.Message, state):
     start_date_input = message.text
-    await message.reply("Введите конечную дату (dd.mm.yyyy) или нажмите Enter, чтобы пропустить:")
+    await message.reply(
+        "Введите конечную дату (dd.mm.yyyy) или нажмите Enter, чтобы пропустить:"
+    )
     await dp.current_state(user=message.from_user.id).set_state("waiting_for_end_date")
     await state.update_data(start_date_input=start_date_input)
+
 
 @dp.message_handler(state="waiting_for_end_date")
 async def process_end_date_step(message: types.Message, state):
@@ -182,5 +211,9 @@ async def process_end_date_step(message: types.Message, state):
 
     await dp.current_state(user=message.from_user.id).reset_state()
 
-if __name__ == '__main__':
-    executor.start_polling(dp, skip_updates=True)
+
+async def main():
+    await dp.start_polling(bot)
+
+
+asyncio.run(main())
