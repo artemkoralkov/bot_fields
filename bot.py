@@ -1,9 +1,9 @@
 import logging
 from aiogram import Bot, Dispatcher, types
-from aiogram.contrib.middlewares.logging import LoggingMiddleware
-from aiogram.types import ParseMode
+
+
 from aiogram.utils import executor
-from random import randint
+
 import re
 from db import (
     init_db,
@@ -19,11 +19,11 @@ init_db()
 # Вставьте сюда ваш токен API
 API_TOKEN = 'YOUR_API_TOKEN'
 
-logging.basicConfig(level=logging.INFO)
+
 
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
-dp.middleware.setup(LoggingMiddleware())
+
 
 message_pattern = r"№\d+\w*\d*\s+[А-Я][а-я]+"
 
