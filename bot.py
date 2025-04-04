@@ -30,22 +30,21 @@ message_pattern = r"№\d+\w*\d*\s+[А-Я][а-я]+"
 # Обработчик команды /start
 @dp.message_handler(commands=['start'])
 async def send_welcome(message: types.Message):
-    await message.reply("Привет! Я ваш бот. Используйте команды /add и /view для взаимодействия.")
+    await message.reply("Привет! Я ваш бот. Используйте команду /view для просмотра сообщений или просто отправьте сообщение для добавления в базу.")
 
-# Обработчик команды /add
-@dp.message_handler(commands=['add'])
-async def add_messages(message: types.Message):
-    template_message = "№21 Давыдовская тестовое сообщение"
-    for i in range(1, 20):
-        message_text = template_message + str(i)
-        match = re.search(message_pattern, message_text)
-        if match:
-            part_to_remove = match.group(0)
-            message_without_part = message_text.replace(part_to_remove, "").strip()
-            field_number, field_name = part_to_remove.split()
-            field_number = field_number + str(randint(1, 9))
-            add_to_db(field_name, field_number, message_without_part)
-    await message.reply("Сообщения добавлены.")
+# Обработчик текстовых сообщений
+@dp.message_handler(content_types=types.ContentType.TEXT)
+async def handle_text_message(message: types.Message):
+    message_text = message.text
+    match = re.search(message_pattern, message_text)
+    if match:
+        part_to_remove = match.group(0)
+        message_without_part = message_text.replace(part_to_remove, "").strip()
+        field_number, field_name = part_to_remove.split()
+        add_to_db(field_name, field_number, message_without_part)
+        await message.reply("Сообщение добавлено.")
+    else:
+        await message.reply("Сообщение не соответствует требуемому формату.")
 
 # Обработчик команды /view
 @dp.message_handler(commands=['view'])
@@ -112,76 +111,4 @@ async def process_field_name_step(message: types.Message, state):
         await state.update_data(selected_field_name=selected_field_name, number_pages=number_pages, current_number_page=current_number_page)
         return
 
-    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
-    for name in pages[current_page]:
-        keyboard.add(name)
-
-    if len(pages) > 1:
-        if current_page > 0:
-            keyboard.add("⬅️ Предыдущая")
-        if current_page < len(pages) - 1:
-            keyboard.add("Следующая ➡️")
-
-    await message.reply("Выберите поле:", reply_markup=keyboard)
-    await state.update_data(current_page=current_page)
-
-@dp.message_handler(state="waiting_for_field_number")
-async def process_field_number_step(message: types.Message, state):
-    data = await state.get_data()
-    number_pages = data.get("number_pages")
-    current_number_page = data.get("current_number_page")
-
-    if message.text == "⬅️ Предыдущая":
-        current_number_page -= 1
-    elif message.text == "Следующая ➡️":
-        current_number_page += 1
-    else:
-        selected_field_number = message.text
-        await message.reply("Введите начальную дату (dd.mm.yyyy) или нажмите Enter, чтобы пропустить:")
-        await dp.current_state(user=message.from_user.id).set_state("waiting_for_start_date")
-        await state.update_data(selected_field_number=selected_field_number)
-        return
-
-    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
-    for number in number_pages[current_number_page]:
-        keyboard.add(number)
-
-    if len(number_pages) > 1:
-        if current_number_page > 0:
-            keyboard.add("⬅️ Предыдущая")
-        if current_number_page < len(number_pages) - 1:
-            keyboard.add("Следующая ➡️")
-
-    await message.reply("Выберите номер:", reply_markup=keyboard)
-    await state.update_data(current_number_page=current_number_page)
-
-@dp.message_handler(state="waiting_for_start_date")
-async def process_start_date_step(message: types.Message, state):
-    start_date_input = message.text
-    await message.reply("Введите конечную дату (dd.mm.yyyy) или нажмите Enter, чтобы пропустить:")
-    await dp.current_state(user=message.from_user.id).set_state("waiting_for_end_date")
-    await state.update_data(start_date_input=start_date_input)
-
-@dp.message_handler(state="waiting_for_end_date")
-async def process_end_date_step(message: types.Message, state):
-    end_date_input = message.text
-    data = await state.get_data()
-    selected_field_name = data.get("selected_field_name")
-    selected_field_number = data.get("selected_field_number")
-    start_date_input = data.get("start_date_input")
-
-    messages = get_messages(
-        selected_field_name,
-        selected_field_number,
-        start_date_input,
-        end_date_input,
-    )
-    if messages:
-        await message.reply("\n".join(messages))
-    else:
-        await message.reply("Сообщения не найдены.")
-
-    await dp.current_state(user=message.from_user.id).reset_state()
-
-if __name__ == '__main__':
-    executor.start_polling(dp, skip_updates=True)
+    keyboard =
